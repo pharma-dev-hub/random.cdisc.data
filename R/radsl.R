@@ -16,6 +16,9 @@
 #' @inheritParams argument_convention
 #' @param N (`numeric`)\cr Number of patients.
 #' @param study_duration (`numeric`)\cr Duration of study in years.
+#' @param armcd_label character vectar of ARMCD labels
+#' @param armcd_prob numeric vector of probabilities of being assigned to the ARMCD
+#' @param arm_label character vector of ARM labels
 #' @param with_trt02 (`logical`)\cr Should period 2 be added.
 #' @param ae_withdrawal_prob (`proportion`)\cr Probability that there is at least one
 #' Adverse Event leading to the withdrawal of a study drug.
@@ -44,6 +47,12 @@
 radsl <- function(N = 400, # nolint
                   study_duration = 2,
                   seed = NULL,
+
+                  # set arm labels and probabilities to NULL
+                  armcd_label = NULL,
+                  armcd_prob = NULL,
+                  arm_label = NULL,
+
                   with_trt02 = TRUE,
                   na_percentage = 0,
                   na_vars = list(
@@ -68,6 +77,19 @@ radsl <- function(N = 400, # nolint
     set.seed(seed)
   }
 
+  # stop if arm parameter lengths do not match
+  if (length(armcd_label) != length(armcd_prob) ||
+        length(armcd_label) != length(arm_label) ||
+        length(armcd_prob)  != length(arm_label)) {
+    stop("armcd_label, armcd_prob and arm_label must all be the same length.")
+  }
+
+  # stop if armcd_prob is not numeric or if values do not sum to 1
+  if (!is.null(armcd_prob) && !is.numeric(armcd_prob) ||
+        !is.null(armcd_prob) && sum(armcd_prob) != 1) {
+    stop("armcd_prob must be a vector of numeric values and must sum to 1.")
+  }
+
   study_duration_secs <- lubridate::seconds(lubridate::years(study_duration))
   sys_dtm <- lubridate::fast_strptime("20/2/2019 11:16:16.683", "%d/%m/%Y %H:%M:%OS")
   discons <- max(1, floor((N * .3)))
@@ -85,7 +107,15 @@ radsl <- function(N = 400, # nolint
     AGE = sapply(stats::rchisq(N, df = 5, ncp = 10), max, 0) + 20,
     AGEU = "YEARS",
     SEX = c("F", "M") %>% sample_fct(N, prob = c(.52, .48)),
-    ARMCD = c("ARM A", "ARM B", "ARM C") %>% sample_fct(N),
+
+    # if the user does not specify armcd values or probabilities
+    # i.e. by default armcd_label = NULL and armcd_prob = NULL
+    # then ARMCD is computed using default values
+    # else ARMCD is computed using user-defined armcd_label and armcd_prob
+    ARMCD = if (is.null(armcd_label) && is.null(armcd_prob))
+      c("ARM A", "ARM B", "ARM C") %>% sample_fct(N) else
+      sample(armcd_label, N, prob = armcd_prob, replace = TRUE),
+
     RACE = c(
       "ASIAN", "BLACK OR AFRICAN AMERICAN", "WHITE", "AMERICAN INDIAN OR ALASKA NATIVE",
       "MULTIPLE", "NATIVE HAWAIIAN OR OTHER PACIFIC ISLANDER", "OTHER", "UNKNOWN"
@@ -102,10 +132,19 @@ radsl <- function(N = 400, # nolint
     BEP01FL = sample_fct(c("Y", "N"), N),
     AEWITHFL = sample_fct(c("Y", "N"), N, prob = c(ae_withdrawal_prob, 1 - ae_withdrawal_prob))
   ) %>%
-    dplyr::mutate(ARM = dplyr::recode(
-      ARMCD,
-      "ARM A" = "A: Drug X", "ARM B" = "B: Placebo", "ARM C" = "C: Combination"
-    )) %>%
+    dplyr::mutate(
+
+      # if the user does not specify armcd values or probabilities
+      # i.e. by default armcd_label = NULL and armcd_prob = NULL
+      # then ARM is computed using default values
+      # else ARM is computed using user-defined arm_label and armcd_label
+      ARM = if (is.null(armcd_label) && is.null(armcd_prob))
+        dplyr::recode(
+          ARMCD,
+          "ARM A" = "A: Drug X", "ARM B" = "B: Placebo", "ARM C" = "C: Combination"
+        ) else arm_label[match(ARMCD, armcd_label)]
+
+    ) %>%
     dplyr::mutate(ACTARM = ARM) %>%
     dplyr::mutate(ACTARMCD = ARMCD) %>%
     dplyr::mutate(TRT01P = ARM) %>%

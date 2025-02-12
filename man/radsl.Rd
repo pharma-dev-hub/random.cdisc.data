@@ -8,6 +8,9 @@ radsl(
   N = 400,
   study_duration = 2,
   seed = NULL,
+  armcd_label = NULL,
+  armcd_prob = NULL,
+  arm_label = NULL,
   with_trt02 = TRUE,
   na_percentage = 0,
   na_vars = list(AGE = NA, SEX = NA, RACE = NA, STRATA1 = NA, STRATA2 = NA, BMRKR1 =
@@ -22,6 +25,12 @@ radsl(
 \item{study_duration}{(\code{numeric})\cr Duration of study in years.}
 
 \item{seed}{(\code{numeric})\cr Seed to use for reproducible random number generation.}
+
+\item{armcd_label}{character vectar of ARMCD labels}
+
+\item{armcd_prob}{numeric vector of probabilities of being assigned to the ARMCD}
+
+\item{arm_label}{character vector of ARM labels}
 
 \item{with_trt02}{(\code{logical})\cr Should period 2 be added.}
 
