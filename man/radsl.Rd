@@ -8,6 +8,9 @@ radsl(
   N = 400,
   study_duration = 2,
   seed = NULL,
+  height_male = NULL,
+  height_female = NULL,
+  height_sd = NULL,
   with_trt02 = TRUE,
   na_percentage = 0,
   na_vars = list(AGE = NA, SEX = NA, RACE = NA, STRATA1 = NA, STRATA2 = NA, BMRKR1 =
@@ -22,6 +25,12 @@ radsl(
 \item{study_duration}{(\code{numeric})\cr Duration of study in years.}
 
 \item{seed}{(\code{numeric})\cr Seed to use for reproducible random number generation.}
+
+\item{height_male}{mean of male height}
+
+\item{height_female}{mean of female height}
+
+\item{height_sd}{height standard deviation}
 
 \item{with_trt02}{(\code{logical})\cr Should period 2 be added.}
 

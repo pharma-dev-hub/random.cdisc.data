@@ -16,6 +16,9 @@
 #' @inheritParams argument_convention
 #' @param N (`numeric`)\cr Number of patients.
 #' @param study_duration (`numeric`)\cr Duration of study in years.
+#' @param height_male mean of male height
+#' @param height_female mean of female height
+#' @param height_sd height standard deviation
 #' @param with_trt02 (`logical`)\cr Should period 2 be added.
 #' @param ae_withdrawal_prob (`proportion`)\cr Probability that there is at least one
 #' Adverse Event leading to the withdrawal of a study drug.
@@ -44,6 +47,12 @@
 radsl <- function(N = 400, # nolint
                   study_duration = 2,
                   seed = NULL,
+
+                  # set height parameters to NULL
+                  height_male = NULL,
+                  height_female = NULL,
+                  height_sd = NULL,
+
                   with_trt02 = TRUE,
                   na_percentage = 0,
                   na_vars = list(
@@ -66,6 +75,20 @@ radsl <- function(N = 400, # nolint
 
   if (!is.null(seed)) {
     set.seed(seed)
+  }
+
+  # stop if height parameters lengths do not match
+  if (length(height_male) != length(height_female) ||
+        length(height_male) != length(height_sd) ||
+        length(height_female) != length(height_sd)) {
+    stop("height_male, height_female and height_sd must all be the same length")
+  }
+
+  # stop if height_male, height_female and height_sd are not numeric
+  if (!is.null(height_male) && !is.numeric(height_male) ||
+        !is.null(height_female) && !is.numeric(height_female) ||
+        !is.null(height_sd) && !is.numeric(height_sd)) {
+    stop("height_male, height_female and height_sd must be numeric")
   }
 
   study_duration_secs <- lubridate::seconds(lubridate::years(study_duration))
@@ -113,6 +136,31 @@ radsl <- function(N = 400, # nolint
     dplyr::mutate(ITTFL = factor("Y")) %>%
     dplyr::mutate(SAFFL = factor("Y")) %>%
     dplyr::arrange(TRTSDTM)
+
+  # if height_male, height_female and height_sd are not used
+  if (is.null(height_male) && is.null(height_female) && is.null(height_sd)) {
+    # set adsl to be itself
+    adsl <- adsl
+  } else {
+
+    # filter adsl for males
+    adsl_male <- adsl %>% filter(SEX == "M")
+    # filter adsl for females
+    adsl_female <- adsl %>% filter(SEX == "F")
+
+    adsl_male <- adsl_male %>%
+      mutate(HEIGHT = round(rnorm(nrow(adsl_male),
+                                  mean = height_male,
+                                  sd = height_sd),
+                            digits = 1))
+    adsl_female <- adsl_female %>%
+      mutate(HEIGHT = round(rnorm(nrow(adsl_female),
+                                  mean = height_female,
+                                  sd = height_sd),
+                            digits = 1))
+    adsl <- rbind(adsl_male, adsl_female) %>%
+      arrange(nchar(SUBJID), SUBJID)
+  }
 
   adds <- adsl[sample(nrow(adsl), discons), ] %>%
     dplyr::mutate(TRTEDTM_discon = sample(
