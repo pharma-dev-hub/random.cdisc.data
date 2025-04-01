@@ -8,9 +8,9 @@ radsl(
   N = 400,
   study_duration = 2,
   seed = NULL,
-  height_male = NULL,
-  height_female = NULL,
-  height_sd = NULL,
+  height_male = 180,
+  height_female = 160,
+  height_sd = 8,
   with_trt02 = TRUE,
   na_percentage = 0,
   na_vars = list(AGE = NA, SEX = NA, RACE = NA, STRATA1 = NA, STRATA2 = NA, BMRKR1 =

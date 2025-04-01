@@ -48,10 +48,10 @@ radsl <- function(N = 400, # nolint
                   study_duration = 2,
                   seed = NULL,
 
-                  # set height parameters to NULL
-                  height_male = NULL,
-                  height_female = NULL,
-                  height_sd = NULL,
+                  # set default height parameters
+                  height_male = 180,
+                  height_female = 160,
+                  height_sd = 8,
 
                   with_trt02 = TRUE,
                   na_percentage = 0,
@@ -75,13 +75,6 @@ radsl <- function(N = 400, # nolint
 
   if (!is.null(seed)) {
     set.seed(seed)
-  }
-
-  # stop if height parameters lengths do not match
-  if (length(height_male) != length(height_female) ||
-        length(height_male) != length(height_sd) ||
-        length(height_female) != length(height_sd)) {
-    stop("height_male, height_female and height_sd must all be the same length")
   }
 
   # stop if height_male, height_female and height_sd are not numeric
@@ -137,30 +130,28 @@ radsl <- function(N = 400, # nolint
     dplyr::mutate(SAFFL = factor("Y")) %>%
     dplyr::arrange(TRTSDTM)
 
-  # if height_male, height_female and height_sd are not used
-  if (is.null(height_male) && is.null(height_female) && is.null(height_sd)) {
-    # set adsl to be itself
-    adsl <- adsl
-  } else {
+  # filter adsl for males
+  adsl_male <- adsl %>% filter(SEX == "M")
+  # filter adsl for females
+  adsl_female <- adsl %>% filter(SEX == "F")
 
-    # filter adsl for males
-    adsl_male <- adsl %>% filter(SEX == "M")
-    # filter adsl for females
-    adsl_female <- adsl %>% filter(SEX == "F")
+  # generate heights for males and add to male adsl dataset
+  adsl_male <- adsl_male %>%
+    mutate(HEIGHT = round(rnorm(nrow(adsl_male),
+                                mean = height_male,
+                                sd = height_sd),
+                          digits = 1))
+  # generate heights for females and add to male adsl dataset
+  adsl_female <- adsl_female %>%
+    mutate(HEIGHT = round(rnorm(nrow(adsl_female),
+                                mean = height_female,
+                                sd = height_sd),
+                          digits = 1))
+  # bind male and female height datasets
+  adsl <- rbind(adsl_male, adsl_female) %>%
+    arrange(nchar(SUBJID), SUBJID)
 
-    adsl_male <- adsl_male %>%
-      mutate(HEIGHT = round(rnorm(nrow(adsl_male),
-                                  mean = height_male,
-                                  sd = height_sd),
-                            digits = 1))
-    adsl_female <- adsl_female %>%
-      mutate(HEIGHT = round(rnorm(nrow(adsl_female),
-                                  mean = height_female,
-                                  sd = height_sd),
-                            digits = 1))
-    adsl <- rbind(adsl_male, adsl_female) %>%
-      arrange(nchar(SUBJID), SUBJID)
-  }
+
 
   adds <- adsl[sample(nrow(adsl), discons), ] %>%
     dplyr::mutate(TRTEDTM_discon = sample(
