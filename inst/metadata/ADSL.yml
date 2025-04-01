@@ -24,6 +24,9 @@ variables:
   SEX:
     label: Sex
     type: factor
+  HEIGHT:
+    label: Height
+    type: character
   RACE:
     label: Race
     type: factor
