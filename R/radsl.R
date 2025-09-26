@@ -82,8 +82,7 @@ radsl <- function(N = 400, # nolint
   }
 
   # stop if race_prob is not numeric or if values do not sum to 1
-  if (!is.null(race_prob) && !is.numeric(race_prob) ||
-    !is.null(race_prob) && sum(race_prob) != 1) {
+  if (!is.null(race_prob) && !is.numeric(race_prob) || !is.null(race_prob) && sum(race_prob) != 1) {
     stop("race_prob must be a vector of numeric values and must sum to 1.")
   }
 
