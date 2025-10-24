@@ -76,7 +76,7 @@ radsl <- function(N = 400, # nolint
     set.seed(seed)
   }
 
-  # stop if race_list length do not match race probability length
+  # stop if race_list length does not match race probability length
   if (length(race_list) != length(race_prob)) {
     stop("race_list and race_prob must all be the same length.")
   }
